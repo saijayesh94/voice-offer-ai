@@ -1,2 +1,7 @@
+node_modules
+.env
+.env.*
+!.env.example
 src/logs
 src/lustrous-bounty-443706-b7-fc7c62d3c244.json
+*.log

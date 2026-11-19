@@ -8,15 +8,18 @@ const { console } = require("inspector");
 
 
 
-// Set up Google Cloud credentials
-
+// Set up Google Cloud credentials (service-account JSON used by Text-to-Speech).
+// Defaults to the key file sitting next to this script (server/src/), which is git-ignored.
 process.env.GOOGLE_APPLICATION_CREDENTIALS = path.resolve(
-   '/usr/src/app/src/lustrous-bounty-443706-b7-fc7c62d3c244.json'
+   process.env.GOOGLE_APPLICATION_CREDENTIALS ||
+   path.join(__dirname, 'lustrous-bounty-443706-b7-fc7c62d3c244.json')
 );
 
-// process.env.GOOGLE_APPLICATION_CREDENTIALS = path.resolve(
-//    '/home/ubuntu/MaxHome_finial_version/server/src/lustrous-bounty-443706-b7-fc7c62d3c244.json'
-// );
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash-exp";
+const PDF_FILLER_URL = process.env.PDF_FILLER_URL || "https://us-central1-maxhome-410814.cloudfunctions.net/DeepnetTest";
+const OFFER_CC_EMAIL = process.env.OFFER_CC_EMAIL || "";
+const OFFER_CC_NAME = process.env.OFFER_CC_NAME || "";
 
 const fields = {
    "Buyer Name_001": {
@@ -103,82 +106,6 @@ const fields = {
       "type": "string",
       "description": ""
    },
-   // "Has_1": {
-   //     "type": "boolean",
-   //     "description": "True if buyer Has received a completed Illinois Residential Real Property Disclosure"
-   // },
-   // "Has Not_1": {
-   //     "type": "boolean",
-   //     "description": "True if buyer Has not received a completed Illinois Residential Real Property Disclosure"
-   // },
-   // "Has_2": {
-   //     "type": "boolean",
-   //     "description": "True if has received the EPA Pamphlet, Protect Your Family From Lead In Your Home"
-   // },
-   // "Has Not_2": {
-   //     "type": "boolean",
-   //     "description": "True if has not received the EPA Pamphlet, Protect Your Family From Lead In Your Home"
-   // },
-   // "Has_3": {
-   //     "type": "boolean",
-   //     "description": "True if has received a Lead-Based Paint Disclosure"
-   // },
-   // "Has Not_3": {
-   //     "type": "boolean",
-   //     "description": "True if has not received a Lead-Based Paint Disclosure"
-   // },
-   // "Has_4": {
-   //     "type": "boolean",
-   //     "description": "True if has received the IEMA, Radon Testing Guidelines for Real Estate Transactions"
-   // },
-   // "Has Not_4": {
-   //     "type": "boolean",
-   //     "description": "True if has not received the IEMA, Radon Testing Guidelines for Real Estate Transactions"
-   // },
-   // "Has_5": {
-   //     "type": "boolean",
-   //     "description": "True if has received the Disclosure of Information on Radon Hazards. "
-   // },
-   // "Has Not_5": {
-   //     "type": "boolean",
-   //     "description": "True if has not received the Disclosure of Information on Radon Hazards. "
-   // },
-   // "Percent of Full Year Tax Bill": {
-   //     "type": "string",
-   //     "description": "Percent of Full Year Tax Bill"
-   // },
-   //  "Has_6": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
-   //  "Has Not_6": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
-   //  "Is_3": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
-   //  "Is Not_3": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
-   //  "Is_4": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
-   //  "Is not_4": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
-   //  "Is_5": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
-   //  "Is Not_5": {
-   //      "type": "boolean",
-   //      "description": ""
-   //  },
    "Date_3": {
       "type": "string",
       "description": ""
@@ -8090,18 +8017,16 @@ async function chat(messages) {
       const localMiniDict = { ...messages.mini_dict || {} };
 
       // Initialize Google Gemini Client
-
-      const keys = ['AIzaSyDFPb--kLUyaBeGZGo0pdYPUyX2Bawvz3g', 'AIzaSyCxfTXDsMg5CRp85TouZdZSKsLq1tr9wI8','AIzaSyDBDAmuAudfW90ez6oeDkdAc_h0X-8Ayek'];
-      const randomKey = keys[Math.floor(Math.random() * keys.length)];
-
-      const client = new GoogleGenerativeAI(randomKey);
-      // const client = new GoogleGenerativeAI('AIzaSyDFPb--kLUyaBeGZGo0pdYPUyX2Bawvz3g');
+      if (!GEMINI_API_KEY) {
+         throw new Error("GEMINI_API_KEY is not set. Add it to server/.env (see server/.env.example).");
+      }
+      const client = new GoogleGenerativeAI(GEMINI_API_KEY);
       const systemMessages = [{ role: "system", content: sysmsg }].concat(fewshot);
       const localConversation = systemMessages.concat(messages.conversation);
 
       // Configure Model
       const model = client.getGenerativeModel({
-         model: "gemini-2.0-flash-exp",
+         model: GEMINI_MODEL,
          temperature: 1,
          systemInstruction: systemMessages
       });
@@ -8163,8 +8088,8 @@ async function chat(messages) {
             "envelope_args": {
                "signer_email": localMiniDict["buyer_email"],
                "signer_name": localMiniDict["Buyer Name_001"],
-               "cc_email": "waeez@deepnetlabs.com",  // rdibiase@maxhome.ai
-               "cc_name": "waeez", // rob
+               "cc_email": OFFER_CC_EMAIL,
+               "cc_name": OFFER_CC_NAME,
                "signer_email2": "",
                "signer_name2": "",
                "signer_email3": "",
@@ -8198,7 +8123,7 @@ async function callPDFFiller(pdfData) {
    // Call the serverless function to generate the PDF
    //  console.log("pdfData", pdfData)
 
-   const response = await axios.post('https://us-central1-maxhome-410814.cloudfunctions.net/DeepnetTest', pdfData);
+   const response = await axios.post(PDF_FILLER_URL, pdfData);
    console.log("response", response)
    const response_data = JSON.parse(response.data.body);
    console.log("response_data", response_data)

@@ -1,3 +1,6 @@
+// Load environment variables from server/.env before anything reads them
+require("dotenv").config({ path: require("path").join(__dirname, "..", ".env") });
+
 const lib = require("./constants");
 const logger = require("./logger");
 const express = require("express");
@@ -13,9 +16,7 @@ app.use(bodyParser.json());
 const PORT = process.env.PORT || 3000;
 const upload = multer({ limits: { fileSize: 10 * 1024 * 1024 } }); // Limit file size to 10MB
 
-process.env.GOOGLE_APPLICATION_CREDENTIALS = "/usr/src/app/src/lustrous-bounty-443706-b7-fc7c62d3c244.json";
-
-// process.env.GOOGLE_APPLICATION_CREDENTIALS = "/home/ubuntu/MaxHome_finial_version/server/src/lustrous-bounty-443706-b7-fc7c62d3c244.json";
+// Google Cloud credentials are configured in ./constants.js (GOOGLE_APPLICATION_CREDENTIALS)
 
 app.listen(PORT, () => {
     logger.info(`Server listening on port: ${PORT}`);

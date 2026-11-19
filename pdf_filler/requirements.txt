@@ -1,0 +1,7 @@
+pytz
+fastapi
+PyMuPDF==1.24.0
+docusign-esign==3.25.1
+requests
+uvicorn
+python-dotenv

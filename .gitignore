@@ -1,2 +1,57 @@
-frontend/node_modules
-pdf_filler
+# ===============================================================
+# Secrets & credentials — never commit these
+# ===============================================================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.p12
+# Google Cloud service-account key files
+server/src/lustrous-bounty-*.json
+*service-account*.json
+*credentials*.json
+
+# ===============================================================
+# Dependencies
+# ===============================================================
+node_modules/
+.pnp
+.pnp.js
+
+# ===============================================================
+# Build output / coverage
+# ===============================================================
+frontend/build/
+build/
+coverage/
+
+# ===============================================================
+# Logs (winston writes to server/src/logs)
+# ===============================================================
+logs/
+*.log
+*.log.gz
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ===============================================================
+# Python
+# ===============================================================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+# Generated contracts (contain buyer personal data)
+output_pdf/
+
+# ===============================================================
+# OS / editor
+# ===============================================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+
